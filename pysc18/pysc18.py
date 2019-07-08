@@ -18,15 +18,32 @@ REG_BRG1=0x01
 REG_PortConf1=0x02
 REG_PortConf2=0x03
 
+def _i2c_write_addr(i2c_addr): return i2c_addr & 0xFE
+def _i2c_read_addr(i2c_addr): return i2c_addr | 0x01
+
 class SC18IM700:
     def __init__(self, port='/dev/ttyS0'):
         self._sercom = serial.Serial(port, timeout=0.5)
+    
+    def _tx(self, data):
+        self._sercom.write(data)
+    
+    def _rx(self, size=1):
+        return self._sercom.read(size=size)
 
     def i2c_write(self, i2c_addr, data_bytes):
-        pass #TODO
+        size = len(data_bytes)
+        if size >= 256:
+            raise Exception("Cannot i2c write more than 256 bytes")
+        
+        addr = _i2c_write_addr(i2c_addr)
+        payload = I2C_START_CMD + bytes(addr, size) + data_bytes
+        self._tx(payload)
 
     def i2c_read(self, i2c_addr, byte_cnt=1):
-        return b'' #TODO
+        addr = _i2c_read_addr(i2c_addr)
+        payload = I2C_START_CMD + bytes([addr, byte_cnt])
+        return self._rx(byte_cnt)
     
     def reg_write(self, reg_num, data_byte):
         pass #TODO
