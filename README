@@ -1,0 +1,2 @@
+module for interfacing with NXP SC18IM700 uart/i2c using pyserial
+
