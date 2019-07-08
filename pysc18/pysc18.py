@@ -27,9 +27,11 @@ class SC18IM700:
     
     def _tx(self, data):
         self._sercom.write(data)
+        log.debug("Wrote {}".format(data))
     
     def _rx(self, size=1):
-        return self._sercom.read(size=size)
+        resp = self._sercom.read(size=size)
+        log.debug("Read {}".format(data))
 
     def i2c_write(self, i2c_addr, data_bytes):
         size = len(data_bytes)
@@ -37,12 +39,12 @@ class SC18IM700:
             raise Exception("Cannot i2c write more than 256 bytes")
         
         addr = _i2c_write_addr(i2c_addr)
-        payload = I2C_START_CMD + bytes(addr, size) + data_bytes
+        payload = I2C_START_CMD + bytes([addr, size]) + data_bytes + I2C_STOP_CMD
         self._tx(payload)
 
     def i2c_read(self, i2c_addr, byte_cnt=1):
         addr = _i2c_read_addr(i2c_addr)
-        payload = I2C_START_CMD + bytes([addr, byte_cnt])
+        payload = I2C_START_CMD + bytes([addr, byte_cnt]) + I2C_STOP_CMD
         return self._rx(byte_cnt)
     
     def reg_write(self, reg_num, data_byte):
@@ -56,8 +58,9 @@ class SC18IM700:
         pass #TODO
 
     def gpio_read(self):
-        #write b'IP' then read 1 byte
-        return b'\x00' #TODO
+        payload = GPIO_READ_CMD + FRAME_END
+        self._tx(payload)
+        return self._rx(1)
     
     def power_down(self):
         #write Z 0x5A 0xA5 P
@@ -66,5 +69,14 @@ class SC18IM700:
 
 
 if __name__ == '__main__':
+    log.basicConfig(level = log.DEBUG)
     sc18 = SC18IM700(port='/dev/ttyS0')
+    GPIO_EXP1_ADDDR = 0x20
+    GPIO_EXP2_ADDDR = 0x24
+    
+   
+    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x06, 0x00])) #configure P7-P0 as outputs
 
+    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x10, 0xF0])) 
+    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x11, 0x0F])) 
+    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x12, 0x00])) 
