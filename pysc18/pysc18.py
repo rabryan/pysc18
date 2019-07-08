@@ -32,6 +32,7 @@ class SC18IM700:
     def _rx(self, size=1):
         resp = self._sercom.read(size=size)
         log.debug("Read {}".format(data))
+        return resp
 
     def i2c_write(self, i2c_addr, data_bytes):
         size = len(data_bytes)
@@ -47,11 +48,24 @@ class SC18IM700:
         payload = I2C_START_CMD + bytes([addr, byte_cnt]) + I2C_STOP_CMD
         return self._rx(byte_cnt)
     
+    def regs_write(self, reg_nums, data_bytes):
+        payload = REG_WRITE_CMD + bytes(reg_nums) + data_bytes + FRAME_END
+        self._tx(payload)
+    
+    def regs_read(self, reg_nums):
+        cnt = len(reg_nums)
+        payload = REG_READ_CMD + bytes([reg_nums]) + FRAME_END
+        self._tx(payload)
+        return self._rx(cnt)
+
     def reg_write(self, reg_num, data_byte):
-        pass #TODO
+        payload = REG_WRITE_CMD + bytes([reg_num]) + data_byte + FRAME_END
+        self._tx(payload)
     
     def reg_read(self, reg_num):
-        return b'\xFF' #TODO
+        payload = REG_READ_CMD + bytes([reg_num]) + FRAME_END
+        self._tx(payload)
+        return self._rx(1)
     
     def gpio_write(self, data):
         #write b'O' then data (bytes) then b'P'
@@ -65,7 +79,14 @@ class SC18IM700:
     def power_down(self):
         #write Z 0x5A 0xA5 P
         pass #TODO
+    
+    def print_registers():
+        REG_CNT=11
+        regs = [0x00 + i for i in range(REG_CNT)]
+        data = self.regs_read(regs)
 
+        for i, d in enumerate(data):
+            print("0x{:02X}  0x{:02X}".format(i, d))
 
 
 if __name__ == '__main__':
