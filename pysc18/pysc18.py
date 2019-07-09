@@ -106,6 +106,9 @@ if __name__ == '__main__':
         sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x02, output])) #static output for P7-P0
         time.sleep(0.5)
         output+=1
+
+        if output > 255:
+            output = 0
             
     if False:
         sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x10, 0x00])) 
