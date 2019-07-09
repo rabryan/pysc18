@@ -18,8 +18,8 @@ REG_BRG1=0x01
 REG_PortConf1=0x02
 REG_PortConf2=0x03
 
-def _i2c_write_addr(i2c_addr): return i2c_addr & 0xFE
-def _i2c_read_addr(i2c_addr): return i2c_addr | 0x01
+def _i2c_write_addr(i2c_addr): return (i2c_addr << 1) & 0xFE
+def _i2c_read_addr(i2c_addr): return (i2c_addr << 1) | 0x01
 
 class SC18IM700:
     def __init__(self, port='/dev/ttyS0'):
@@ -31,7 +31,7 @@ class SC18IM700:
     
     def _rx(self, size=1):
         resp = self._sercom.read(size=size)
-        log.debug("Read {}".format(data))
+        log.debug("Read {}".format(resp))
         return resp
 
     def i2c_write(self, i2c_addr, data_bytes):
@@ -54,7 +54,7 @@ class SC18IM700:
     
     def regs_read(self, reg_nums):
         cnt = len(reg_nums)
-        payload = REG_READ_CMD + bytes([reg_nums]) + FRAME_END
+        payload = REG_READ_CMD + bytes(reg_nums) + FRAME_END
         self._tx(payload)
         return self._rx(cnt)
 
@@ -80,7 +80,7 @@ class SC18IM700:
         #write Z 0x5A 0xA5 P
         pass #TODO
     
-    def print_registers():
+    def print_registers(self):
         REG_CNT=11
         regs = [0x00 + i for i in range(REG_CNT)]
         data = self.regs_read(regs)
@@ -92,12 +92,24 @@ class SC18IM700:
 if __name__ == '__main__':
     log.basicConfig(level = log.DEBUG)
     sc18 = SC18IM700(port='/dev/ttyS0')
-    GPIO_EXP1_ADDDR = 0x20
-    GPIO_EXP2_ADDDR = 0x24
+    GPIO_EXP1_ADDR = 0x20 #7-bit
+    GPIO_EXP2_ADDR = 0x24 #7-bit
     
    
-    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x06, 0x00])) #configure P7-P0 as outputs
+    sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x06, 0x00])) #configure P7-P0 as outputs
+    sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x0E, 0x00])) #master intensity to 0x0 for static output
+    sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x02, 0x00])) #static output for P7-P0
 
-    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x10, 0xF0])) 
-    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x11, 0x0F])) 
-    sc18.i2c_write(GPIO_EXP2_ADDDR, bytes([0x12, 0x00])) 
+    import time
+    output = 0
+    while True:
+        sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x02, output])) #static output for P7-P0
+        time.sleep(0.5)
+        output+=1
+            
+    if False:
+        sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x10, 0x00])) 
+        sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x11, 0xFF])) 
+        sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x12, 0x00])) 
+        sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x13, 0xFF])) 
+        sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x14, 0xFF])) 
