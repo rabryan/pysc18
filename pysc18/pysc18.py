@@ -96,20 +96,41 @@ if __name__ == '__main__':
     GPIO_EXP2_ADDR = 0x24 #7-bit
     
    
+    sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x06, 0x00])) #configure P7-P0 as outputs
+    sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x07, 0x00])) #configure P15-P8 as outputs
+    sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x0E, 0x00])) #master intensity to 0x0 for static output
+    sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x02, 0x00])) #static output for P7-P0
+    sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x03, 0x00])) #static output for P15-P8
+    
     sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x06, 0x00])) #configure P7-P0 as outputs
+    sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x07, 0x00])) #configure P15-P8 as outputs
     sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x0E, 0x00])) #master intensity to 0x0 for static output
     sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x02, 0x00])) #static output for P7-P0
+    sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x03, 0x00])) #static output for P15-P8
+
 
     import time
-    output = 0
-    while True:
-        sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x02, output])) #static output for P7-P0
-        time.sleep(0.5)
-        output+=1
 
-        if output > 255:
-            output = 0
-            
+    try:
+        time.sleep(2)
+
+        output = 0
+        while True:
+            sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x02, output])) #static output for P7-P0
+            sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x03, output])) #static output for P15-P8
+            sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x02, output])) #static output for P7-P0
+            sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x03, output])) #static output for P15-P8
+            time.sleep(0.2)
+            output+=1
+
+            if output > 255:
+                output = 0
+    except KeyboardInterrupt:
+            sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x02, 0xFF])) #static output for P7-P0
+            sc18.i2c_write(GPIO_EXP1_ADDR, bytes([0x03, 0xFF])) #static output for P15-P8
+            sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x02, 0xFF])) #static output for P7-P0
+            sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x03, 0xFF])) #static output for P15-P8
+        
     if False:
         sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x10, 0x00])) 
         sc18.i2c_write(GPIO_EXP2_ADDR, bytes([0x11, 0xFF])) 
